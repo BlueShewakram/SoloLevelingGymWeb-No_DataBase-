@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Solo Leveling Gym - Level up your fitness like a hunter. Track workouts, attendance, and rise through ranks.">
+    <title>Solo Leveling Gym | Arise, Hunter</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- System Notification -->
+    <div class="overlay" id="overlay"></div>
+    <div class="system-notification" id="system-notification">
+        <div class="system-box">
+            <div class="system-message" id="system-msg">LEVEL UP!</div>
+            <div class="system-sub" id="system-sub">You are now Level 2!</div>
+        </div>
+    </div>
+
+    <!-- System Access Loading Overlay -->
+    <div id="system-access-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+        <div style="font-family:'Orbitron', sans-serif; color:var(--blue-glow); font-size:1.5rem; letter-spacing:5px; margin-bottom:20px; animation: pulse-glow 1s infinite;">ACCESSING SYSTEM...</div>
+        <div style="width:300px; height:2px; background:rgba(0,212,255,0.1); border-radius:2px; overflow:hidden;">
+            <div id="system-access-bar" style="width:0%; height:100%; background:var(--blue-glow); box-shadow:0 0 15px var(--blue-glow); transition: width 0.1s linear;"></div>
+        </div>
+        <div id="system-access-text" style="margin-top:15px; font-family:'Inter', sans-serif; color:var(--text-secondary); font-size:0.8rem; letter-spacing:1px;">INITIALIZING HUNTER PROTOCOL...</div>
+    </div>
+
+    <!-- ========== LOGIN VIEW ========== -->
+    <div class="view active" id="login-view">
+        <div class="login-grid">
+            <div class="login-container">
+                <div class="login-badge">Solo Leveling Gym</div>
+                <h1 class="login-title" id="login-title">HUNTER LOGIN</h1>
+                <p class="login-subtitle">Enter the dungeon. Begin your ascent.</p>
+                <div class="form-group" id="name-group" style="display:none;">
+                    <label for="input-name">Hunter Name</label>
+                    <input type="text" id="input-name" placeholder="Sung Jin-woo" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="input-username">Username</label>
+                    <input type="text" id="input-username" placeholder="shadow_monarch" autocomplete="off" onkeydown="if(event.key==='Enter')handleLogin()">
+                </div>
+                <div class="form-group">
+                    <label for="input-password">Password</label>
+                    <div class="input-with-action">
+                        <input type="password" id="input-password" placeholder="********" onkeydown="if(event.key==='Enter')handleLogin()">
+                        <button class="input-action" type="button" onclick="togglePasswordVisibility()" id="password-toggle">Show</button>
+                    </div>
+                </div>
+                <button class="btn-arise" id="login-btn" onclick="handleLogin()">ENTER</button>
+                <div class="login-error" id="login-error"></div>
+                <div class="login-toggle" id="login-toggle-text">
+                    New hunter? <a onclick="toggleLoginMode()">Register</a>
+                </div>
+            </div>
+
+            <div class="login-highlight">
+                <div class="highlight-title">Command your ascent</div>
+                <p class="highlight-sub">Track attendance, log workouts, and level up with daily quests.</p>
+                <div class="highlight-grid">
+                    <div class="highlight-card">
+                        <div class="highlight-label">Daily log</div>
+                        <div class="highlight-value">+50 XP</div>
+                        <div class="highlight-desc">Earn streak bonuses when you check in.</div>
+                    </div>
+                    <div class="highlight-card">
+                        <div class="highlight-label">Templates</div>
+                        <div class="highlight-value">1-click</div>
+                        <div class="highlight-desc">Load push, pull, legs, or full body plans.</div>
+                    </div>
+                    <div class="highlight-card">
+                        <div class="highlight-label">Rest timer</div>
+                        <div class="highlight-value">Smart</div>
+                        <div class="highlight-desc">Preset or custom timers that count toward quests.</div>
+                    </div>
+                </div>
+                <div class="highlight-footer">Already geared up? Hit ENTER or press Enter to step inside.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== DASHBOARD VIEW ========== -->
+    <div class="view" id="dashboard-view">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="nav-brand">SOLO LEVELING GYM</div>
+            <div class="nav-user">
+                <span class="nav-gold" id="nav-gold" style="color:var(--gold); font-weight:700; font-family:'Orbitron', sans-serif; display:flex; align-items:center; gap:6px; margin-right:12px;">
+                    <span style="font-size:1.1rem;">🪙</span> <span id="gold-value">0</span>
+                </span>
+                <span class="nav-rank-badge badge-e" id="nav-rank">E-RANK</span>
+                <span class="nav-username" id="nav-username">Hunter</span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+                <span>&#9876;</span> Dashboard
+            </button>
+            <button class="tab-btn" data-tab="workouts" onclick="switchTab('workouts')">
+                <span>&#127947;</span> Workouts
+            </button>
+            <button class="tab-btn" data-tab="quests" onclick="switchTab('quests')">
+                <span>&#128220;</span> Quests & Raids
+            </button>
+            <button class="tab-btn" data-tab="shadows" onclick="switchTab('shadows')">
+                <span>&#128128;</span> Store & Shadows
+            </button>
+            <button class="tab-btn" data-tab="timer" onclick="switchTab('timer')">
+                <span>&#9201;</span> Rest Timer
+            </button>
+            <button class="tab-btn" data-tab="templates" onclick="switchTab('templates')">
+                <span>&#128218;</span> Templates
+            </button>
+        </div>
+
+        <!-- ===== DASHBOARD TAB ===== -->
+        <div class="tab-panel active" id="tab-dashboard">
+            <div class="dashboard-grid">
+                <!-- Left: Status -->
+                <aside class="status-panel">
+                    <div class="status-header">HUNTER STATUS</div>
+                    <div class="hunter-avatar" id="hunter-initials">SJ</div>
+                    <div class="hunter-name" id="hunter-name">Hunter</div>
+                    <select id="title-select" class="hunter-title" onchange="equipTitle(this.value)" style="margin: 0 auto 14px; display:block; background:rgba(0,0,0,0.4); border:1px solid var(--glass-border); color:var(--text-secondary); border-radius:8px; padding:4px 8px; font-size:0.75rem; text-align:center; outline:none; cursor:pointer;">
+                        <option value="The Player">The Player</option>
+                    </select>
+                    <div class="hunter-rank rank-e" id="hunter-rank">E-RANK HUNTER</div>
+                    <div class="xp-section">
+                        <div class="xp-info">
+                            <span class="xp-level" id="xp-level">LV. 1</span>
+                            <span class="xp-numbers" id="xp-numbers">0 / 50 XP</span>
+                        </div>
+                        <div class="xp-bar"><div class="xp-bar-fill" id="xp-fill" style="width:0%"></div></div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item"><div class="stat-label">Strength</div><div class="stat-value str" id="stat-str">10</div></div>
+                        <div class="stat-item"><div class="stat-label">Agility</div><div class="stat-value agi" id="stat-agi">8</div></div>
+                        <div class="stat-item"><div class="stat-label">Vitality</div><div class="stat-value vit" id="stat-vit">12</div></div>
+                        <div class="stat-item"><div class="stat-label">Intelligence</div><div class="stat-value int" id="stat-int">6</div></div>
+                    </div>
+                </aside>
+
+                <!-- Right: Content -->
+                <div class="dash-right">
+                    <!-- Check-in -->
+                    <section class="card">
+                        <div class="card-title">DAILY CHECK-IN</div>
+                        <div class="checkin-content">
+                            <div class="checkin-streak">
+                                <span class="streak-flames">&#128293;</span>
+                                <div>
+                                    <div class="streak-count" id="streak-count">0</div>
+                                    <div class="streak-label">Day Streak</div>
+                                </div>
+                                <span class="streak-flames">&#128293;</span>
+                            </div>
+                            <button class="btn-checkin" id="btn-checkin" onclick="doCheckIn()">CHECK IN</button>
+                            <div class="checkin-status" id="checkin-status">Mark your attendance to earn XP</div>
+                        </div>
+                    </section>
+
+                    <!-- Calendar -->
+                    <section class="card">
+                        <div class="card-title" id="calendar-month">ATTENDANCE LOG</div>
+                        <div class="calendar-grid" id="calendar-grid">
+                            <div class="calendar-day-header">Sun</div>
+                            <div class="calendar-day-header">Mon</div>
+                            <div class="calendar-day-header">Tue</div>
+                            <div class="calendar-day-header">Wed</div>
+                            <div class="calendar-day-header">Thu</div>
+                            <div class="calendar-day-header">Fri</div>
+                            <div class="calendar-day-header">Sat</div>
+                        </div>
+                        <div class="attendance-stats">
+                            <div class="att-stat"><div class="att-stat-value" id="att-total">0</div><div class="att-stat-label">Total Days</div></div>
+                            <div class="att-stat"><div class="att-stat-value" id="att-monthly">0</div><div class="att-stat-label">This Month</div></div>
+                            <div class="att-stat"><div class="att-stat-value" id="att-streak">0</div><div class="att-stat-label">Streak</div></div>
+                        </div>
+                    </section>
+
+                    <!-- History -->
+                    <section class="card">
+                        <div class="card-title">RECENT ACTIVITY</div>
+                        <div class="history-list" id="history-list">
+                            <div class="history-empty">No attendance yet. Begin your journey!</div>
+                        </div>
+                    </section>
+
+                    <!-- Charts -->
+                    <section class="card" id="charts-card" style="display:none;">
+                        <div class="card-title">SYSTEM ANALYSIS</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:20px;">
+                            <div style="flex:1; min-width:250px; background:rgba(0,0,0,0.2); border-radius:12px; padding:15px; border:1px solid rgba(0,212,255,0.06); display:flex; justify-content:center;">
+                                <canvas id="radar-chart" style="max-height:250px;"></canvas>
+                            </div>
+                            <div style="flex:1; min-width:250px; background:rgba(0,0,0,0.2); border-radius:12px; padding:15px; border:1px solid rgba(0,212,255,0.06); display:flex; justify-content:center;">
+                                <canvas id="line-chart" style="max-height:250px;"></canvas>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== WORKOUTS TAB ===== -->
+        <div class="tab-panel" id="tab-workouts">
+            <div class="workout-grid">
+                <!-- Left: Log workout -->
+                <div class="card">
+                    <div class="card-title">LOG WORKOUT</div>
+                    <div class="workout-form">
+                        <div class="form-group">
+                            <label>Exercise Name</label>
+                            <input type="text" id="ex-name" placeholder="e.g. Bench Press">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sets</label>
+                                <input type="number" id="ex-sets" placeholder="4" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Reps</label>
+                                <input type="number" id="ex-reps" placeholder="10" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Weight (kg)</label>
+                                <input type="number" id="ex-weight" placeholder="60" min="0" step="0.5">
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="addExercise()">+ Add Exercise</button>
+
+                        <div class="card-title" style="margin-top:16px;">CURRENT SESSION</div>
+                        <div id="current-exercises">
+                            <div class="history-empty">No exercises added yet</div>
+                        </div>
+
+                        <button class="btn-primary" onclick="saveWorkout()" style="margin-top:12px;">SAVE WORKOUT</button>
+                    </div>
+                </div>
+
+                <!-- Right: Workout history -->
+                <div class="card">
+                    <div class="card-title">WORKOUT HISTORY</div>
+                    <div class="workout-log" id="workout-log">
+                        <div class="history-empty">No workouts logged yet. Start training!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== QUESTS TAB ===== -->
+        <div class="tab-panel" id="tab-quests">
+            <!-- Boss Raid -->
+            <div class="card" style="margin-bottom:24px; border-color:var(--red-glow); box-shadow:inset 0 0 20px rgba(255,51,85,0.05), 0 0 30px rgba(255,51,85,0.1);">
+                <div class="card-title" style="color:var(--red-glow);">DUNGEON BOSS RAID (WEEKLY)</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div>
+                        <h2 id="boss-name" style="font-family:'Orbitron', sans-serif; font-size:1.6rem; margin-bottom:6px; color:#fff; text-shadow:0 0 10px rgba(255,255,255,0.3);">Igris, the Blood Red Commander</h2>
+                        <p id="boss-desc" style="color:var(--text-secondary); font-size:0.85rem;">Defeat the boss by accumulating total lifted volume this week.</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <div id="boss-level" style="font-family:'Orbitron', sans-serif; font-size:1.8rem; font-weight:900; color:var(--red-glow); text-shadow:0 0 15px var(--red-glow);">Lv.10</div>
+                        <div style="font-size:0.75rem; color:var(--gold); font-weight:700; margin-top:4px;" id="boss-reward">Reward: +1000 XP & +500 Gold</div>
+                    </div>
+                </div>
+                <!-- Health Bar -->
+                <div style="display:flex; align-items:center; gap:15px; margin-bottom:8px;">
+                     <div style="font-family:'Orbitron', sans-serif; font-weight:700; width:30px; color:var(--red-glow);">HP</div>
+                     <div style="flex:1; height:22px; background:rgba(0,0,0,0.6); border-radius:12px; border:1px solid rgba(255,51,85,0.3); overflow:hidden; position:relative;">
+                         <div id="boss-hp-fill" style="height:100%; background:linear-gradient(90deg, #ff0033, #ff5555); width:100%; transition:width 1s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 0 15px rgba(255,51,85,0.6);"></div>
+                         <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 50%); pointer-events:none;"></div>
+                     </div>
+                </div>
+                <div style="text-align:right; font-family:'Orbitron', sans-serif; font-size:0.85rem; color:var(--text-secondary);">
+                    <span id="boss-hp-current" style="color:var(--red-glow); font-weight:700;">5000</span> / <span id="boss-hp-max">5000</span> kg Volume Remaining
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">DAILY QUESTS - SYSTEM MISSION</div>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:8px;">
+                    Complete daily quests to earn bonus XP. Quests refresh every day.
+                </p>
+            </div>
+            <div class="quests-grid" id="quests-list"></div>
+        </div>
+
+        <!-- ===== STORE & SHADOWS TAB ===== -->
+        <div class="tab-panel" id="tab-shadows">
+            <div class="store-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                <!-- Left: Shadow Army -->
+                <div class="card shadow-panel">
+                    <div class="card-title" style="color:var(--purple-glow);">SHADOW ARMY</div>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:16px;">
+                        Extract shadows from defeated enemies as you level up. Equip them to gain passive XP multipliers.
+                    </p>
+                    <div id="shadow-list" style="display:flex; flex-direction:column; gap:12px;">
+                        <div class="history-empty">Level up to unlock shadows.</div>
+                    </div>
+                </div>
+
+                <!-- Right: System Store -->
+                <div class="card store-panel">
+                    <div class="card-title" style="color:var(--gold);">SYSTEM STORE</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); padding:16px; border-radius:14px; margin-bottom:20px; box-shadow:inset 0 0 20px rgba(255,215,0,0.05);">
+                        <span style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--text-secondary);">Your Balance</span>
+                        <span style="font-family:'Orbitron'; font-size:1.6rem; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px; text-shadow:0 0 15px rgba(255,215,0,0.4);">
+                            🪙 <span id="store-gold">0</span>
+                        </span>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:12px;" id="store-items">
+                        <!-- Potion -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); padding:16px; border-radius:12px; transition:all 0.3s; cursor:default;" onmouseover="this.style.borderColor='rgba(0,212,255,0.3)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+                            <div style="flex:1;">
+                                <div style="font-weight:700; color:#51cf66; margin-bottom:6px; font-size:0.95rem;">🧪 System Recovery Potion</div>
+                                <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Restores 1 missed attendance day to save your streak. Automatically fills the last empty day.<br><span style="color:#fff;font-weight:600;display:inline-block;margin-top:6px;">Owned: <span id="potion-count" style="color:#51cf66;font-size:1.1rem;">0</span></span></div>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+                                <button class="btn-secondary" onclick="buyItem('potion', 500)" style="white-space:nowrap; border-color:var(--gold); color:var(--gold); display:flex; gap:6px; align-items:center;">Buy <span>🪙 500</span></button>
+                                <button class="btn-secondary" onclick="usePotion()" style="white-space:nowrap; border-color:#51cf66; color:#51cf66; padding:8px 16px; font-weight:700;">USE</button>
+                            </div>
+                        </div>
+
+                        <!-- Theme: Monarch -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); padding:16px; border-radius:12px; transition:all 0.3s;" onmouseover="this.style.borderColor='rgba(124,58,237,0.3)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+                            <div style="flex:1;">
+                                <div style="font-weight:700; color:#a78bfa; margin-bottom:6px; font-size:0.95rem;">👑 Shadow Monarch Theme</div>
+                                <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Unlocks the purple Monarch system UI.</div>
+                            </div>
+                            <button class="btn-secondary" id="btn-theme-monarch" onclick="buyTheme('monarch', 1500)" style="white-space:nowrap; border-color:var(--gold); color:var(--gold); display:flex; gap:6px; align-items:center;">Buy <span>🪙 1500</span></button>
+                        </div>
+                        
+                        <!-- Theme: Blood -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); padding:16px; border-radius:12px; transition:all 0.3s;" onmouseover="this.style.borderColor='rgba(255,85,85,0.3)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+                            <div style="flex:1;">
+                                <div style="font-weight:700; color:#ff5555; margin-bottom:6px; font-size:0.95rem;">🩸 Demon King Theme</div>
+                                <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Unlocks the crimson Demon King UI.</div>
+                            </div>
+                            <button class="btn-secondary" id="btn-theme-blood" onclick="buyTheme('blood', 2500)" style="white-space:nowrap; border-color:var(--gold); color:var(--gold); display:flex; gap:6px; align-items:center;">Buy <span>🪙 2500</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TIMER TAB ===== -->
+        <div class="tab-panel" id="tab-timer">
+            <div class="timer-container">
+                <div class="card">
+                    <div class="card-title">REST TIMER</div>
+                    <div class="timer-display">
+                        <div class="timer-value" id="timer-value">01:30</div>
+                        <div class="timer-label">Rest Between Sets</div>
+                    </div>
+
+                    <div class="timer-presets">
+                        <button class="preset-btn" data-time="30" onclick="setTimer(30)">0:30</button>
+                        <button class="preset-btn" data-time="60" onclick="setTimer(60)">1:00</button>
+                        <button class="preset-btn active" data-time="90" onclick="setTimer(90)">1:30</button>
+                        <button class="preset-btn" data-time="120" onclick="setTimer(120)">2:00</button>
+                        <button class="preset-btn" data-time="150" onclick="setTimer(150)">2:30</button>
+                        <button class="preset-btn" data-time="180" onclick="setTimer(180)">3:00</button>
+                        <button class="preset-btn" data-time="240" onclick="setTimer(240)">4:00</button>
+                        <button class="preset-btn" data-time="300" onclick="setTimer(300)">5:00</button>
+                    </div>
+
+                    <div class="timer-controls">
+                        <button class="btn-timer start" id="btn-start-timer" onclick="toggleTimer()">START</button>
+                        <button class="btn-timer reset" onclick="resetTimer()">RESET</button>
+                    </div>
+
+                    <div class="timer-custom">
+                        <input type="number" id="custom-mins" placeholder="Min" min="0" max="59">
+                        <span style="color:var(--text-secondary)">:</span>
+                        <input type="number" id="custom-secs" placeholder="Sec" min="0" max="59">
+                        <button class="btn-secondary" onclick="setCustomTimer()">Set</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TEMPLATES TAB ===== -->
+        <div class="tab-panel" id="tab-templates">
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">WORKOUT TEMPLATES</div>
+                <p style="color:var(--text-secondary);font-size:0.85rem;">
+                    Click a template to load it into your workout session. Modify as needed.
+                </p>
+            </div>
+            <div class="template-grid" id="template-grid"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
